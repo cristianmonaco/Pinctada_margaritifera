@@ -61,6 +61,7 @@ data.am = 20*365;     units.am = 'd';    label.am = 'ultimate age'; bibkey.am = 
   temp.am = C2K(28);  units.temp.am = 'K'; label.temp.am = 'temperature';
   comment.am = 'based on Crassostrea gigas';
 
+data.Lb  = 0.006;   units.Lb  = 'cm';   label.Lb  = 'shell diameter';  bibkey.Lb  = 'Sang2019';  
 data.Ls  = 230*10^-4;   units.Ls  = 'cm';   label.Ls  = 'shell diameter';  bibkey.Ls  = 'Sang2019';  
 data.Lj  = 1.2;   units.Lj  = 'cm';   label.Lj  = 'shell diameter';    bibkey.Lj  = 'Brun2012';  
 data.Lp  = 4;   units.Lp  = 'cm';   label.Lp  = 'shell height';               bibkey.Lp  = 'Pouv2000'; 
@@ -118,7 +119,7 @@ data.tLC4(:,2) = data.tLC4(:,2) * 1e-4; % mum to cm
 units.tLC4   = {'d', 'cm'};  label.tLC4 = {'time since birth', 'shell height'};  bibkey.tLC4 = 'Sang2019';
 temp.tLC4    = C2K(29);  units.temp.tLC4 = 'K'; label.temp.tLC4 = 'temperature';
 comment.tLC4 = 'data from Vairao raceway; known T° & f'; 
-%
+
 data.tLC3 = [1 9 13	16	18 23; %d, age since birth   
   67 92 111 154 188 314]'; % mum, shell height   
 data.tLC3(:,2) = data.tLC3(:,2) * 1e-4; % mum to cm
@@ -132,7 +133,7 @@ data.tLC2(:,2) = data.tLC2(:,2) * 1e-4; % mum to cm
 units.tLC2   = {'d', 'cm'};  label.tLC2 = {'time since birth', 'shell height'};  bibkey.tLC2 = 'Sang2019';
 temp.tLC2    = C2K(29);  units.temp.tLC2 = 'K'; label.temp.tLC2 = 'temperature';
 comment.tLC2 = 'data from Vairao raceway; known T° & f'; % optional field
-%
+
 data.tLC1 = [1 9 13	16	18	23	27 31 35; % d, age since birth
   67 77 85 94 101 134 174 192 212]'; % mum, shell height
 data.tLC1(:,2) = data.tLC1(:,2) * 1e-4; % um to cm
@@ -394,22 +395,42 @@ comment.xf_isoc = 'ingestion rate by ~ 1.3cm individuals, P margaritifera spats.
 
 %% set weights for all real data
 weights = setweights(data, []);
-weights.tL3 = 3 * weights.tL3;
-weights.tLC1 = 3 * weights.tLC1;
-weights.tLC2 = 3 * weights.tLC2;
-weights.tLC3 = 3 * weights.tLC3;
-weights.tLC4 = 3 * weights.tLC4;
-weights.tL = 3 * weights.tL;
-weights.tL2 = 3 * weights.tL2;
-weights.GSI = 0 * weights.GSI;
-weights.Ls = 0 * weights.Ls;
-weights.Lp = 5 * weights.Lp;
-weights.Lj = 3 * weights.Lj;
+
+% weights.GSI = 5 * weights.GSI;
+% 
+% weights.ab = 5 * weights.ab;
+% 
+% weights.as = 5 * weights.as;
+% weights.Lb = 5 * weights.Lb;
+% weights.Ls = 0 * weights.Ls;
+% weights.Lj = 5 * weights.Lj;
+% weights.Lp = 5 * weights.Lp;
+% weights.Li = 5 * weights.Li;
+% 
+% weights.tLC1 = 5 * weights.tLC1;
+% weights.tLC2 = 5 * weights.tLC2;
+% weights.tLC3 = 5 * weights.tLC3;
+% weights.tLC4 = 5 * weights.tLC4;
+% 
+% weights.tL = 5 * weights.tL;
+% weights.tL2 = 5 * weights.tL2;
+% weights.tL3 = 5 * weights.tL3;
+% 
+% weights.WdF = 5 * weights.WdF;
+% weights.TF = 5 * weights.TF;
+% weights.LF1 = 5 * weights.LF1;
+% weights.LF2 = 5 * weights.LF2;
+% weights.LF3 = 5 * weights.LF3;
+% weights.LF4 = 5 * weights.LF4;
+
+weights.xf_isoc = 5 * weights.xf_isoc;
+weights.xf_amph = 5 * weights.xf_amph;
+weights.xf_nitz = 5 * weights.xf_nitz;
 
 %% set pseudodata and respective weights
 [data, units, label, weights] = addpseudodata(data, units, label, weights);
-weights.psd.k_J = 0; weights.psd.k = 0.2;
-data.psd.k = 0.3; units.psd.k = '-'; label.psd.k = 'maintenance ratio';
+weights.psd.k_J = 0; 
+weights.psd.k = 0.2; data.psd.k = 0.3; units.psd.k = '-'; label.psd.k = 'maintenance ratio';
 
 %% pack auxData and txtData for output
 auxData.temp = temp;
@@ -420,7 +441,7 @@ txtData.comment = comment;
 
 %% Group plot
 sets1 = {'tL','tL2','tL3'};  comment1 = {'In-situ growth at different food'};
-sets2 = {'tLC4','tLC3','tLC2','tLC1'}; comment2 = {'Larvae growth at different food'};
+sets2 = {'tLC1','tLC2','tLC3','tLC4'}; comment2 = {'Larvae growth at different food'};
 sets3 = {'LWd4','LWd41','LWd42','LWd43','LWd44','LWd45'}; comment3 = {'Larval weight, Chav2013'};
 sets4 = {'LJO4','LJO3','LJO2','LJO1'}; comment4 = {'Respiration at larvae stage, different food levels'};
 sets5 = {'WdJO','WdJO1'}; comment5 = {'Respiration at 24°C adult stage, 2 food levels'};
@@ -428,8 +449,9 @@ sets6 = {'WdJO2','WdJO3'}; comment6 = {'Respiration at 27°C adult stage, 2 food 
 sets7 = {'WdJO4','WdJO5'}; comment7 = {'Respiration at 30°C adult stage, 2 food levels'};
 sets8 = {'LF1','LF2','LF3','LF4'};  comment8 = {'Filtering rate at larvae stage, different food levels'};
 sets9 = {'xf_amph','xf_nitz','xf_isoc'};  comment9 = {'Functional response juveniles, different food types'};
-metaData.grp.sets = {sets1, sets2, sets3, sets4, sets5, sets6, sets7, sets8, sets9};
-metaData.grp.comment = {comment1, comment2, comment3, comment4, comment5, comment6, comment7, comment8, comment9};
+sets10 = {'WdF'}; comment10 = {'Filtering rate at different dry weights'};
+metaData.grp.sets = {sets1, sets2, sets3, sets4, sets5, sets6, sets7, sets8, sets9, sets10};
+metaData.grp.comment = {comment1, comment2, comment3, comment4, comment5, comment6, comment7, comment8, comment9, comment10};
 
 
 %% Discussion points

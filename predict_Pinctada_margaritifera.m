@@ -14,7 +14,7 @@ function [prdData, info] = predict_Pinctada_margaritifera(par, data, auxData)
   TC_GSI = tempcorr(temp.GSI, T_ref, T_A);      TC_Ri = tempcorr(temp.Ri, T_ref, T_A);
   TC_tL = tempcorr(temp.tL, T_ref, T_A);        TC_tL2 = tempcorr(temp.tL2, T_ref, T_A);      TC_tL3 = tempcorr(temp.tL3, T_ref, T_A);
   TC_tLC = tempcorr(temp.tLC4, T_ref, T_A);     TC_LJO = tempcorr(temp.LJO4, T_ref, T_A);
-  TC_WdF = tempcorr(temp.WdF, T_ref, T_A);      TC_LF1  = tempcorr(temp.LF1, T_ref, T_A);   
+  TC_WdF = tempcorr(temp.WdF, T_ref, T_A);      TC_LF1  = tempcorr(temp.LF1, T_ref, T_A);
   TC_WdJO = tempcorr(temp.WdJO, T_ref, T_A);    TC_WdJO1 = tempcorr(temp.WdJO1, T_ref, T_A);  TC_WdJO2 = tempcorr(temp.WdJO2, T_ref, T_A);
   TC_WdJO3 = tempcorr(temp.WdJO3 , T_ref, T_A); TC_WdJO4 = tempcorr(temp.WdJO4 , T_ref, T_A); TC_WdJO5 = tempcorr(temp.WdJO5, T_ref, T_A);
   TC_xf_amph = tempcorr(temp.xf_amph, T_ref, T_A);  TC_xf_nitz = tempcorr(temp.xf_nitz, T_ref, T_A);  TC_xf_isoc = tempcorr(temp.xf_isoc, T_ref, T_A);
@@ -32,6 +32,7 @@ function [prdData, info] = predict_Pinctada_margaritifera(par, data, auxData)
   
   % birth
   L_b = L_m * l_b;                   % cm, structural length at birth at f
+  Lw_b = L_b/ del_Mb;                   % cm, physical length at birth at f
   Ww_b = L_b^3 * (1 + f * w);        % g, wet weight at birth at f
   aT_b = t_b/ k_M/ TC_ab;           % d, age at birth at f and T
 
@@ -42,8 +43,9 @@ function [prdData, info] = predict_Pinctada_margaritifera(par, data, auxData)
 
   % metamorphosis
   L_j = L_m * l_j;                  % cm, structural length at metam
-  Lw_j = L_j/ del_Mb;               % cm, physical length at metam at f
-  aT_j = t_j / k_M/ TC_aj;          % d, time since birth at metam
+  Lw_j = L_j/ del_M;               % cm, physical length at end of acceleration
+  aT_j = t_j / k_M/ TC_aj;          % d, time since birth at end of acceleration
+  
   s_M = l_j/ l_s;                   % -, acceleration factor
   
   % puberty 
@@ -54,6 +56,8 @@ function [prdData, info] = predict_Pinctada_margaritifera(par, data, auxData)
   % ultimate
   L_i = L_m * l_i;                  % cm, ultimate structural length at f
   Lw_i = L_i/ del_M;                % cm, ultimate physical length at f
+  Ww_i = L_i^3 * (1 + f * w);       % g, ultimate wet weight
+%   Ww_i
   
   % life span
   pars_tm = [g; l_T; h_a/ k_M^2; s_G];  % compose parameter vector at T_ref
@@ -74,6 +78,7 @@ function [prdData, info] = predict_Pinctada_margaritifera(par, data, auxData)
   prdData.aj = aT_j;
   prdData.ap = aT_p;
   prdData.am = aT_m;
+  prdData.Lb = Lw_b;
   prdData.Ls = Lw_s;
   prdData.Lj = Lw_j;
   prdData.Lp = Lw_p;
@@ -84,17 +89,24 @@ function [prdData, info] = predict_Pinctada_margaritifera(par, data, auxData)
   
   
   %% Uni-variate data
-  
+ 
   % Time-length post metam
   
   [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tL);
-  kT_M = TC_tL * k_M; rT_B = rho_B * kT_M;  tT_j = (t_j - t_b)/ kT_M; % 1/d,d,  von Bert growth rate at f
-  L_j = L_m * l_j; L_i = l_i * L_m; % cm, struc length
+  kT_M = TC_tL * k_M; rT_B = rho_B * kT_M;  % 1/d, growth rates
+  tT_j = (t_j - t_b)/ kT_M;                           % time since birth at metam
+  L_j = L_m * l_j; L_i = L_m * l_i;                   % cm, struc lengths
   EtL = (L_i - (L_i - L_j) * exp( - rT_B * (tL(:,1) - tT_j)))/ del_M; % cm, shell height
+  %
+  [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tL3);
+  kT_M = TC_tL3 * k_M; rT_B = rho_B * kT_M;  % 1/d, growth rates
+  tT_j = (t_j - t_b)/ kT_M;                           % time since birth at metam
+  L_j = L_m * l_j; L_i = L_m * l_i;                   % cm, struc lengths
+  EtL3 = (L_i - (L_i - L_j) * exp( - rT_B * (tL3(:,1) - tT_j)))/ del_M; % cm, shell height 
   
   % Time-length include juvenile
   [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tL2);
-  kT_M = TC_tL2 * k_M; rT_j = rho_j * kT_M; rT_B = rho_B * kT_M;  % 1/d, growth rates
+  kT_M = TC_tL2 * k_M; rT_j = rho_j * kT_M; rT_B = rho_B * kT_M;  % 1/d,  von Bert growth rate at f
   tT_j = (t_j - t_b)/ kT_M; tT_s = (t_s - t_b)/ kT_M; % d, times since birth at metamorphosis, settlement
   L_b = L_m * l_b; L_s = L_m * l_s; L_j = L_m * l_j; L_i = L_m * l_i; L_is = L_m * f_tL2; % cm, struc lengths
   t_bs = tL2(tL2(:,1) <= tT_s,1);                       % selects times before settlement
@@ -103,56 +115,71 @@ function [prdData, info] = predict_Pinctada_margaritifera(par, data, auxData)
   L_bs = L_is - (L_is - L_b) * exp( - rT_B * t_bs);     % cm, struc length
   L_sj = L_s * exp((t_sj - tT_s) * rT_j /3);           % cm, struc length
   L_ji = L_i - (L_i - L_j) * exp( - rT_B * (t_ji - tT_j)); % cm, struc length
-  EtL2 = [L_bs; L_sj; L_ji]/ del_M; % cm, shell height
-  %
-  [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tL2);
-  kT_M = TC_tL3 * k_M; rT_B = rho_B * kT_M;  % 1/d, growth rates
-  tT_j = (t_j - t_b)/ kT_M;                           % time since birth at metam
-  L_j = L_m * l_j; L_i = L_m * l_i;                   % cm, struc lengths
-  EtL3 = (L_i - (L_i - L_j) * exp( - rT_B * (tL3(:,1) - tT_j)))/ del_M; % cm, shell height
+  EtL2 = [L_bs; L_sj; L_ji]/ del_Mb; % cm, shell height
+  
+%   % Time-length include juvenile
+%   [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tL);
+%   kT_M = TC_tL * k_M; rT_j = rho_j * kT_M; rT_B = rho_B * kT_M;  % 1/d,  von Bert growth rate at f
+%   tT_j = (t_j - t_b)/ kT_M; tT_s = (t_s - t_b)/ kT_M; % d, times since birth at metamorphosis, settlement
+%   L_b = L_m * l_b; L_s = L_m * l_s; L_j = L_m * l_j; L_i = L_m * l_i; L_is = L_m * f_tL; % cm, struc lengths
+%   t_bs = tL(tL(:,1) <= tT_s,1);                       % selects times before settlement
+%   t_sj = tL(tL(:,1) < tT_j & tL(:,1) > tT_s,1);    % select times between settlement & juvenile stage
+%   t_ji = tL(tL(:,1) >= tT_j,1);                       % selects times after juvenile stage
+%   L_bs = L_is - (L_is - L_b) * exp( - rT_B * t_bs);     % cm, struc length
+%   L_sj = L_s * exp((t_sj - tT_s) * rT_j /3);           % cm, struc length
+%   L_ji = L_i - (L_i - L_j) * exp( - rT_B * (t_ji - tT_j)); % cm, struc length
+%   EtL = [L_bs; L_sj; L_ji]/ del_M; % cm, shell height
+   
   
   % Time-length for larvae at different f
-  [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tLC4);
+    [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tLC4);
   kT_M = TC_tLC * k_M; rT_j = rho_j * kT_M; rT_B = rho_B * kT_M;  % 1/d, growth rates
   tT_s = (t_s - t_b)/ kT_M; tT_j = (t_j - t_b)/ kT_M; % d, times since birth at settlement
-  L_b = L_m * l_b; L_s = L_m * l_s; L_i = L_m * l_i; L_is = L_m * f_tLC4; % cm, struc lengths
+  L_b = L_m * l_b; L_s = L_m * l_s; L_j = L_m * l_j; L_i = L_m * l_i; L_is = L_m * f_tLC4; % cm, struc lengths
   t_bs = tLC4(tLC4(:,1) <= tT_s,1);                       % select times before settlement
   t_sj = tLC4(tLC4(:,1) < tT_j & tLC4(:,1) > tT_s,1);  % select times between settlement & metam
   t_ji = tLC4(tLC4(:,1) >= tT_j,1);                       % selects times after juvenile stage
   L_bs = L_is - (L_is - L_b) * exp( - rT_B * t_bs);      % cm, struc length
   L_sj = L_s * exp((t_sj - tT_s) * rT_j /3);             % cm, struc length
   L_ji = L_i - (L_i - L_j) * exp( - rT_B * (t_ji - tT_j)); % cm, struc length
-  EtLC4 = [L_bs; L_sj; L_ji]/ del_M; % cm, shell height
-  %
-  [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tLC3);
+  EtLC4 = [L_bs; L_sj; L_ji]/ del_Mb; % cm, shell height
+
+      [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tLC3);
   kT_M = TC_tLC * k_M; rT_j = rho_j * kT_M; rT_B = rho_B * kT_M;  % 1/d, growth rates
-  tT_s = (t_s - t_b)/ kT_M; % d, times since birth at settlement
-  L_b = L_m * l_b; L_s = L_m * l_s; L_is = L_m * f_tLC3; % cm, struc lengths
+  tT_s = (t_s - t_b)/ kT_M; tT_j = (t_j - t_b)/ kT_M; % d, times since birth at settlement
+  L_b = L_m * l_b; L_s = L_m * l_s; L_j = L_m * l_j; L_i = L_m * l_i; L_is = L_m * f_tLC3; % cm, struc lengths
   t_bs = tLC3(tLC3(:,1) <= tT_s,1);                       % select times before settlement
   t_sj = tLC3(tLC3(:,1) < tT_j & tLC3(:,1) > tT_s,1);  % select times between settlement & metam
+  t_ji = tLC3(tLC3(:,1) >= tT_j,1);                       % selects times after juvenile stage
   L_bs = L_is - (L_is - L_b) * exp( - rT_B * t_bs);      % cm, struc length
   L_sj = L_s * exp((t_sj - tT_s) * rT_j /3);             % cm, struc length
-  EtLC3 = [L_bs; L_sj]/ del_M; % cm, shell height
-  %
-  [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tLC2);
+  L_ji = L_i - (L_i - L_j) * exp( - rT_B * (t_ji - tT_j)); % cm, struc length
+  EtLC3 = [L_bs; L_sj; L_ji]/ del_Mb; % cm, shell height
+
+      [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tLC2);
   kT_M = TC_tLC * k_M; rT_j = rho_j * kT_M; rT_B = rho_B * kT_M;  % 1/d, growth rates
-  tT_s = (t_s - t_b)/ kT_M; % d, times since birth at settlement
-  L_b = L_m * l_b; L_s = L_m * l_s; L_is = L_m * f_tLC2; % cm, struc lengths
+  tT_s = (t_s - t_b)/ kT_M; tT_j = (t_j - t_b)/ kT_M; % d, times since birth at settlement
+  L_b = L_m * l_b; L_s = L_m * l_s; L_j = L_m * l_j; L_i = L_m * l_i; L_is = L_m * f_tLC1; % cm, struc lengths
   t_bs = tLC2(tLC2(:,1) <= tT_s,1);                       % select times before settlement
   t_sj = tLC2(tLC2(:,1) < tT_j & tLC2(:,1) > tT_s,1);  % select times between settlement & metam
+  t_ji = tLC2(tLC2(:,1) >= tT_j,1);                       % selects times after juvenile stage
   L_bs = L_is - (L_is - L_b) * exp( - rT_B * t_bs);      % cm, struc length
   L_sj = L_s * exp((t_sj - tT_s) * rT_j /3);             % cm, struc length
-  EtLC2 = [L_bs; L_sj]/ del_M; % cm, shell height
-  %
-  [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tLC1);
+  L_ji = L_i - (L_i - L_j) * exp( - rT_B * (t_ji - tT_j)); % cm, struc length
+  EtLC2 = [L_bs; L_sj; L_ji]/ del_Mb; % cm, shell height
+  
+      [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tLC1);
   kT_M = TC_tLC * k_M; rT_j = rho_j * kT_M; rT_B = rho_B * kT_M;  % 1/d, growth rates
-  tT_s = (t_s - t_b)/ kT_M; % d, times since birth at settlement
-  L_b = L_m * l_b; L_s = L_m * l_s; L_is = L_m * f_tLC1; % cm, struc lengths
+  tT_s = (t_s - t_b)/ kT_M; tT_j = (t_j - t_b)/ kT_M; % d, times since birth at settlement
+  L_b = L_m * l_b; L_s = L_m * l_s; L_i = L_m * l_i; L_is = L_m * f_tLC1; % cm, struc lengths
   t_bs = tLC1(tLC1(:,1) <= tT_s,1);                       % select times before settlement
   t_sj = tLC1(tLC1(:,1) < tT_j & tLC1(:,1) > tT_s,1);  % select times between settlement & metam
+  t_ji = tLC1(tLC1(:,1) >= tT_j,1);                       % selects times after juvenile stage
   L_bs = L_is - (L_is - L_b) * exp( - rT_B * t_bs);      % cm, struc length
   L_sj = L_s * exp((t_sj - tT_s) * rT_j /3);             % cm, struc length
-  EtLC1 = [L_bs; L_sj]/ del_M; % cm, shell height
+  L_ji = L_i - (L_i - L_j) * exp( - rT_B * (t_ji - tT_j)); % cm, struc length
+  EtLC1 = [L_bs; L_sj; L_ji]/ del_Mb; % cm, shell height
+  
   
   % Length-weight
   ELWd4 =  (LWd4(:,1) * del_M).^3 * d_V * (1 + f_lagoon * w);    % g, dry weight
@@ -214,7 +241,7 @@ function [prdData, info] = predict_Pinctada_margaritifera(par, data, auxData)
   J_M = - (n_M\n_O) * eta_O * pACSJGRD(:, [1 7 5])';                  % mol/d: J_C, J_H, J_O, J_N in rows
   ELJO3 = - J_M(3,:)' * TC_LJO * 32e9 / 24;         % ng O2/h, O2 consumption
   %
-  [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, l_i, rho_j, rho_B] = get_ts(pars_ts, f_tLC2);
+  [t_s, t_j, t_p, t_b, l_s, l_j, l_p, l_b, ~, rho_j, rho_B] = get_ts(pars_ts, f_tLC2);
   pACSJGRD = p_ref * scaled_power_s(LJO2(:,1) * del_Mb, f_tLC2, pars_R, l_b, l_s, l_j, l_p);  % J/d, powers
   J_M = - (n_M\n_O) * eta_O * pACSJGRD(:, [1 7 5])';                  % mol/d: J_C, J_H, J_O, J_N in rows
   ELJO2 = - J_M(3,:)' * TC_LJO * 32e9 / 24;         % ng O2/h, O2 consumption
@@ -225,7 +252,7 @@ function [prdData, info] = predict_Pinctada_margaritifera(par, data, auxData)
   ELJO1 = - J_M(3,:)' * TC_LJO * 32e9 / 24;         % ng O2/h, O2 consumption
   
   % Dry weight - filtering rate
-  EWdF  = TC_WdF * F_m * (WdF(:,1)/ d_V/ (1 + f_lagoon * w)).^(2/3) * (1 - f_lagoon) / 24; % l/h, clearance rate
+  EWdF  = TC_WdF * F_m * (WdF(:,1)/ d_V/ (1 + f_WdF * w)).^(2/3) * (1 - f_WdF) / 24; % l/h, clearance rate
   
   % Temperature - filtering rate
   L_TF = 10; % 10 cm shell length
@@ -239,27 +266,34 @@ function [prdData, info] = predict_Pinctada_margaritifera(par, data, auxData)
   
   % Feeding functional response data - Amphidiniumn
   L = 1.3; % cm, shell length
-  K_amph = J_X_Am/ F_m_amph;        % c-mol X/l, half-saturation coefficient
-  xK_amph = K_amph * w_X; % g/l or mg/ml
+%   y_E_X  = kap_X_amph * mu_X/ mu_E;  % mol/mol, yield of reserve on food
+%   y_X_E  = 1/ y_E_X;            % mol/mol, yield of food on reserve
+% %   p_Xm   = p_Am/ kap_X_amph;         % J/d.cm^2, max spec feeding power
+%   J_X_Am = y_X_E * J_E_Am;      % mol/d.cm^2, {J_XAm}, max surface-spec feeding flux
+  K = J_X_Am/ F_m;        % c-mol X/l, half-saturation coefficient
+  xK = K * w_X; % g/l or mg/ml
   %   xK_amph = K_amph * 12; % g C/l or mg C/ml
-  J_XLm_amph = s_M * p_Am/ kap_X / mu_X * w_X * 1e3 * (del_M * L)^2; % mg/d, maximum ingestion of a 1.3-cm P margaritifera at T_ref
-  Exf_amph = TC_xf_amph * J_XLm_amph * xf_amph(:,1)./(xK_amph + xf_amph(:,1)); % mg/d, ingestion of a 1.3-cm P margaritifera at T
+  J_XLm_amph = s_M * p_Xm_amph / mu_X * w_X * 1e3 * (del_M * L)^2; % mg/d, maximum ingestion of a 1.3-cm P margaritifera at T_ref
+%   J_XLm_amph = s_M * p_Am / kap_X_amph / mu_X * w_X * 1e3 * (del_M * L)^2; % mg/d, maximum ingestion of a 1.3-cm P margaritifera at T_ref
+  Exf_amph = TC_xf_amph * J_XLm_amph * xf_amph(:,1)./(xK + xf_amph(:,1)); % mg/d, ingestion of a 1.3-cm P margaritifera at T
   
   % Feeding functional response data - Nitzschia
   L = 1.3; % cm, shell length
-  K_nitz = J_X_Am/ F_m_nitz;        % c-mol X/l, half-saturation coefficient
-  xK_nitz = K_nitz * w_X; % g/l or mg/ml
+  K = J_X_Am/ F_m;        % c-mol X/l, half-saturation coefficient
+  xK = K * w_X; % g/l or mg/ml
   %   xK_nitz = K_nitz * 12; % g C/l or mg C/ml
-  J_XLm_nitz = s_M * p_Am/ kap_X / mu_X * w_X * 1e3 * (del_M * L)^2; % mg/d, maximum ingestion of a 1.3-cm P margaritifera at T_ref
-  Exf_nitz = TC_xf_nitz * J_XLm_nitz * xf_nitz(:,1)./(xK_nitz + xf_nitz(:,1)); % mg/d, ingestion of a 1.3-cm P margaritifera at T
+  J_XLm_nitz = s_M * p_Xm_nitz / mu_X * w_X * 1e3 * (del_M * L)^2; % mg/d, maximum ingestion of a 1.3-cm P margaritifera at T_ref
+% J_XLm_nitz = s_M * p_Am / kap_X / mu_X * w_X * 1e3 * (del_M * L)^2; % mg/d, maximum ingestion of a 1.3-cm P margaritifera at T_ref
+  Exf_nitz = TC_xf_nitz * J_XLm_nitz * xf_nitz(:,1)./(xK + xf_nitz(:,1)); % mg/d, ingestion of a 1.3-cm P margaritifera at T
   
   % Feeding functional response data - Isochrysis
   L = 1.3; % cm, shell length
-  K_isoc = J_X_Am/ F_m_isoc;        % c-mol X/l, half-saturation coefficient
-  xK_isoc = K_isoc * w_X; % g/l or mg/ml
+  K = J_X_Am/ F_m;        % c-mol X/l, half-saturation coefficient
+  xK = K * w_X; % g/l or mg/ml
   %   xK_isoc = K_isoc * 12; % g C/l or mg C/ml
-  J_XLm_isoc = s_M * p_Am/ kap_X / mu_X * w_X * 1e3 * (del_M * L)^2; % mg/d, maximum ingestion of a 1.3-cm P margaritifera at T_ref
-  Exf_isoc = TC_xf_isoc * J_XLm_isoc * xf_isoc(:,1)./(xK_isoc + xf_isoc(:,1)); % mg/d, ingestion of a 1.3-cm P margaritifera at T
+  J_XLm_isoc = s_M * p_Xm_isoc / mu_X * w_X * 1e3 * (del_M * L)^2; % mg/d, maximum ingestion of a 1.3-cm P margaritifera at T_ref
+% J_XLm_isoc = s_M * p_Am /kap_X_isoc / mu_X * w_X * 1e3 * (del_M * L)^2; % mg/d, maximum ingestion of a 1.3-cm P margaritifera at T_ref
+  Exf_isoc = TC_xf_isoc * J_XLm_isoc * xf_isoc(:,1)./(xK + xf_isoc(:,1)); % mg/d, ingestion of a 1.3-cm P margaritifera at T
   
   
  %%  pack to output
